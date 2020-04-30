@@ -10,6 +10,7 @@ description = "XTS block mode implementation in rust"
 repository = "https://github.com/pheki/xts-mode"
 documentation = "https://docs.rs/xts-mode"
 keywords = ["encryption", "xts"]
+exclude = ["test_files"]
 
 [dependencies]
 block-cipher-trait = "0.6"
