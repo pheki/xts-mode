@@ -1,8 +1,8 @@
 /*!
-XTS implementation in rust. Currently only 128-bit (16-byte) algorithms are supported, if you
+[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in rust. Currently only 128-bit (16-byte) algorithms are supported, if you
 require other sizes, please open an issue.
 
-For better AES performance, it is recommended to use the `aes` crate and enable the aes feature in
+For better AES performance, it is recommended to use the `aes` crate and enable the `aes` feature in
 the compiler (see [reference](https://doc.rust-lang.org/reference/attributes/codegen.html#the-target_feature-attribute)
 and [aesni](https://docs.rs/aesni/)).
 
@@ -25,11 +25,14 @@ let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
+let sector_size = 0x200;
+let first_sector_index = 0;
+
 // Encrypt data in the buffer
-xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+xts.encrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
 
 // Decrypt data in the buffer
-xts.decrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+xts.decrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
 
 assert_eq!(&buffer[..], &plaintext[..]);
 ```
