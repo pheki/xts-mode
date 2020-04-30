@@ -1,0 +1,29 @@
+[package]
+name = "xts-mode"
+version = "0.1.0"
+authors = ["Aphek <bilkow@tutanota.com>"]
+edition = "2018"
+license = "MIT"
+
+readme = "README.md"
+description = "XTS block mode implementation in rust"
+repository = "https://github.com/pheki/xts-mode"
+documentation = "https://docs.rs/xts-mode"
+keywords = ["encryption", "xts"]
+
+[dependencies]
+block-cipher-trait = "0.6"
+byteorder = "1"
+
+[dev-dependencies]
+# For tests
+hex-literal = "0.2"
+aes = "0.3"
+
+# For benchmarks
+criterion = "0.3"
+rand = "0.7"
+
+[[bench]]
+name = "encryption"
+harness = false
