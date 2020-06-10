@@ -12,7 +12,7 @@ and [aesni](https://docs.rs/aesni/)).
 Encrypting and decrypting multiple sectors at a time:
 ```rust
 use aes::Aes128;
-use aes::block_cipher_trait::BlockCipher;
+use aes::block_cipher::NewBlockCipher;
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -41,7 +41,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 Encrypting and decrypting a single sector:
 ```rust
 use aes::Aes128;
-use aes::block_cipher_trait::BlockCipher;
+use aes::block_cipher::NewBlockCipher;
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -69,7 +69,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```rust
 use aes::Aes128;
-use aes::block_cipher_trait::BlockCipher;
+use aes::block_cipher::NewBlockCipher;
 use xts_mode::Xts128;
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {

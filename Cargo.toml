@@ -13,13 +13,13 @@ keywords = ["encryption", "xts"]
 exclude = ["test_files"]
 
 [dependencies]
-block-cipher-trait = "0.6"
+block-cipher = "0.7"
 byteorder = "1"
 
 [dev-dependencies]
 # For tests
 hex-literal = "0.2"
-aes = "0.3"
+aes = "0.4"
 
 # For benchmarks
 criterion = "0.3"
