@@ -4,7 +4,7 @@ extern crate criterion;
 use xts_mode::{get_tweak_default, Xts128};
 
 use aes::Aes128;
-use block_cipher::NewBlockCipher;
+use cipher::NewBlockCipher;
 use criterion::Criterion;
 use rand::RngCore;
 

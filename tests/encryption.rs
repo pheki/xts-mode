@@ -5,7 +5,7 @@ extern crate hex_literal;
 
 use aes::Aes128;
 
-use block_cipher::NewBlockCipher;
+use cipher::NewBlockCipher;
 use xts_mode::{get_tweak_default, Xts128};
 
 #[test]

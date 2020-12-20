@@ -11,7 +11,7 @@ and [aesni](https://docs.rs/aesni/)).
 Encrypting and decrypting multiple sectors at a time:
 ```
 use aes::Aes128;
-use aes::block_cipher::NewBlockCipher;
+use aes::NewBlockCipher;
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -40,7 +40,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 Encrypting and decrypting a single sector:
 ```
 use aes::Aes128;
-use aes::block_cipher::NewBlockCipher;
+use aes::NewBlockCipher;
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -68,7 +68,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```
 use aes::Aes128;
-use aes::block_cipher::NewBlockCipher;
+use aes::NewBlockCipher;
 use xts_mode::Xts128;
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
@@ -102,9 +102,9 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
-use block_cipher::generic_array::typenum::Unsigned;
-use block_cipher::generic_array::GenericArray;
-use block_cipher::BlockCipher;
+use cipher::generic_array::typenum::Unsigned;
+use cipher::generic_array::GenericArray;
+use cipher::BlockCipher;
 
 use byteorder::{ByteOrder, LittleEndian};
 
