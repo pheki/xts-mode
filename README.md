@@ -1,10 +1,12 @@
 # xts-mode
 
-[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in rust. Currently only 128-bit (16-byte) algorithms are supported, if you
-require other sizes, please open an issue.
+[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in rust.
+Currently only 128-bit (16-byte) algorithms are supported, if you require other
+sizes, please open an issue. Note that AES-256 uses 128-bit blocks, so it should
+work as is.
 
-For better AES performance, it is recommended to use the `aes` crate and enable the `aes` feature in
-the compiler (see [reference](https://doc.rust-lang.org/reference/attributes/codegen.html#the-target_feature-attribute)
+For better AES performance, it is recommended to use the `aes` crate and enable
+the `aes` feature in the compiler (see [reference](https://doc.rust-lang.org/reference/attributes/codegen.html#the-target_feature-attribute)
 and [aesni](https://docs.rs/aesni/)).
 
 ## Examples:
