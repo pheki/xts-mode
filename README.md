@@ -5,10 +5,6 @@ Currently only 128-bit (16-byte) algorithms are supported, if you require other
 sizes, please open an issue. Note that AES-256 uses 128-bit blocks, so it should
 work as is.
 
-For better AES performance, it is recommended to use the `aes` crate and enable
-the `aes` feature in the compiler (see [reference](https://doc.rust-lang.org/reference/attributes/codegen.html#the-target_feature-attribute)
-and [aesni](https://docs.rs/aesni/)).
-
 ## Examples:
 
 Encrypting and decrypting multiple sectors at a time:
@@ -23,8 +19,8 @@ let plaintext = [5; 0x400];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -52,8 +48,8 @@ let plaintext = [5; 0x200];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -84,8 +80,8 @@ let header_key = &[0; 0x20];
 // Read into buffer header to be decrypted
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new_varkey(&header_key[..0x10]).unwrap();
-let cipher_2 = Aes128::new_varkey(&header_key[0x10..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&header_key[..0x10]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&header_key[0x10..]).unwrap();
 
 let mut xts = Xts128::new(cipher_1, cipher_2);
 

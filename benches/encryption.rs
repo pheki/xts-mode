@@ -16,8 +16,8 @@ fn encryption_128(criterion: &mut Criterion) {
     let mut key = [0; 32];
     rng.fill_bytes(&mut key);
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 

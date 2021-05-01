@@ -4,10 +4,6 @@ Currently only 128-bit (16-byte) algorithms are supported, if you require other
 sizes, please open an issue. Note that AES-256 uses 128-bit blocks, so it should
 work as is.
 
-For better AES performance, it is recommended to use the `aes` crate and enable
-the `aes` feature in the compiler (see [reference](https://doc.rust-lang.org/reference/attributes/codegen.html#the-target_feature-attribute)
-and [aesni](https://docs.rs/aesni/)).
-
 # Examples:
 
 Encrypting and decrypting multiple sectors at a time:
@@ -22,8 +18,8 @@ let plaintext = [5; 0x400];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -51,8 +47,8 @@ let plaintext = [5; 0x200];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -83,8 +79,8 @@ let header_key = &[0; 0x20];
 // Read into buffer header to be decrypted
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new_varkey(&header_key[..0x10]).unwrap();
-let cipher_2 = Aes128::new_varkey(&header_key[0x10..]).unwrap();
+let cipher_1 = Aes128::new_from_slice(&header_key[..0x10]).unwrap();
+let cipher_2 = Aes128::new_from_slice(&header_key[0x10..]).unwrap();
 
 let mut xts = Xts128::new(cipher_1, cipher_2);
 
@@ -106,20 +102,20 @@ use std::convert::TryInto;
 
 use cipher::generic_array::typenum::Unsigned;
 use cipher::generic_array::GenericArray;
-use cipher::BlockCipher;
+use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt};
 
 use byteorder::{ByteOrder, LittleEndian};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
 /// [here](https://github.com/RustCrypto/block-ciphers/issues/48#issuecomment-574440662).
-pub struct Xts128<C: BlockCipher> {
+pub struct Xts128<C: BlockCipher + BlockDecrypt + BlockEncrypt> {
     /// This cipher is actually used to encrypt the blocks.
     cipher_1: C,
     /// This cipher is used only to compute the tweak at each sector start.
     cipher_2: C,
 }
 
-impl<C: BlockCipher> Xts128<C> {
+impl<C: BlockCipher + BlockDecrypt + BlockEncrypt> Xts128<C> {
     /// Creates a new Xts128 using two cipher instances: the first one's used to encrypt the blocks
     /// and the second one to compute the tweak at the start of each sector.
     ///

@@ -15,8 +15,8 @@ fn recrypt() {
     assert_eq!(plaintext.len(), 34);
     let mut buffer = plaintext.to_owned();
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -35,8 +35,8 @@ fn recrypt_no_remainder() {
     assert_eq!(plaintext.len(), 32);
     let mut buffer = plaintext.to_owned();
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -59,8 +59,8 @@ fn encrypt_file_no_remainder() {
     let mut buffer = fs::read("test_files/random_no_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -77,8 +77,8 @@ fn decrypt_file_no_remainder() {
     let mut buffer = fs::read("test_files/random_no_remainder.enc").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -94,8 +94,8 @@ fn encrypt_file_with_remainder() {
     let mut buffer = fs::read("test_files/random_with_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -113,8 +113,8 @@ fn decrypt_file_with_remainder() {
         fs::read("test_files/random_with_remainder.enc").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-    let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+    let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
+    let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
