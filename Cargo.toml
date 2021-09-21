@@ -1,6 +1,6 @@
 [package]
 name = "xts-mode"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Aphek <bilkow@tutanota.com>"]
 edition = "2018"
 license = "MIT"
@@ -13,13 +13,13 @@ keywords = ["encryption", "xts"]
 exclude = ["test_files"]
 
 [dependencies]
-cipher = "0.2"
+cipher = "0.3"
 byteorder = "1"
 
 [dev-dependencies]
 # For tests
 hex-literal = "0.3"
-aes = "0.6"
+aes = "0.7.5"
 
 # For benchmarks
 criterion = "0.3"

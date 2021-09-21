@@ -12,18 +12,18 @@ and [aesni](https://docs.rs/aesni/)).
 
 Encrypting and decrypting multiple sectors at a time:
 ```
-use aes::Aes128;
-use aes::NewBlockCipher;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
 let key = [1; 32];
 let plaintext = [5; 0x400];
+
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -41,18 +41,18 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```
-use aes::Aes128;
-use aes::NewBlockCipher;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
 let key = [1; 32];
 let plaintext = [5; 0x200];
+
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_varkey(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_varkey(&key[16..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -69,9 +69,8 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```
-use aes::Aes128;
-use aes::NewBlockCipher;
-use xts_mode::Xts128;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use xts_mode::{Xts128, get_tweak_default};
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
     sector_index.to_be_bytes()
@@ -83,8 +82,8 @@ let header_key = &[0; 0x20];
 // Read into buffer header to be decrypted
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new_varkey(&header_key[..0x10]).unwrap();
-let cipher_2 = Aes128::new_varkey(&header_key[0x10..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&header_key[..0x10]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&header_key[0x10..]));
 
 let mut xts = Xts128::new(cipher_1, cipher_2);
 
@@ -104,22 +103,21 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
+use byteorder::{ByteOrder, LittleEndian};
 use cipher::generic_array::typenum::Unsigned;
 use cipher::generic_array::GenericArray;
-use cipher::BlockCipher;
-
-use byteorder::{ByteOrder, LittleEndian};
+use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
 /// [here](https://github.com/RustCrypto/block-ciphers/issues/48#issuecomment-574440662).
-pub struct Xts128<C: BlockCipher> {
+pub struct Xts128<C: BlockEncrypt + BlockDecrypt + BlockCipher> {
     /// This cipher is actually used to encrypt the blocks.
     cipher_1: C,
     /// This cipher is used only to compute the tweak at each sector start.
     cipher_2: C,
 }
 
-impl<C: BlockCipher> Xts128<C> {
+impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// Creates a new Xts128 using two cipher instances: the first one's used to encrypt the blocks
     /// and the second one to compute the tweak at the start of each sector.
     ///
