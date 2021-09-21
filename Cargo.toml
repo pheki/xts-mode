@@ -20,6 +20,7 @@ byteorder = "1"
 # For tests
 hex-literal = "0.3"
 aes = "0.7.5"
+openssl = "0.10"
 
 # For benchmarks
 criterion = "0.3"
