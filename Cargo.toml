@@ -19,7 +19,7 @@ byteorder = "1"
 [dev-dependencies]
 # For tests
 hex-literal = "0.3"
-aes = "0.7"
+aes = "0.7.5"
 
 # For benchmarks
 criterion = "0.3"
