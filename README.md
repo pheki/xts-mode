@@ -9,18 +9,18 @@ work as is.
 
 Encrypting and decrypting multiple sectors at a time:
 ```rust
-use aes::Aes128;
-use aes::NewBlockCipher;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
 let key = [1; 32];
 let plaintext = [5; 0x400];
+
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -38,18 +38,18 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```rust
-use aes::Aes128;
-use aes::NewBlockCipher;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
 let key = [1; 32];
 let plaintext = [5; 0x200];
+
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new_from_slice(&key[..16]).unwrap();
-let cipher_2 = Aes128::new_from_slice(&key[16..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -66,9 +66,8 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```rust
-use aes::Aes128;
-use aes::NewBlockCipher;
-use xts_mode::Xts128;
+use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use xts_mode::{Xts128, get_tweak_default};
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
     sector_index.to_be_bytes()
@@ -80,8 +79,8 @@ let header_key = &[0; 0x20];
 // Read into buffer header to be decrypted
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new_from_slice(&header_key[..0x10]).unwrap();
-let cipher_2 = Aes128::new_from_slice(&header_key[0x10..]).unwrap();
+let cipher_1 = Aes128::new(GenericArray::from_slice(&header_key[..0x10]));
+let cipher_2 = Aes128::new(GenericArray::from_slice(&header_key[0x10..]));
 
 let mut xts = Xts128::new(cipher_1, cipher_2);
 
