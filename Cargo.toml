@@ -1,6 +1,6 @@
 [package]
 name = "xts-mode"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Aphek <bilkow@tutanota.com>"]
 edition = "2018"
 license = "MIT"
