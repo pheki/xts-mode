@@ -9,7 +9,7 @@ use criterion::Criterion;
 use rand::RngCore;
 
 fn encryption_128(criterion: &mut Criterion) {
-    let mut group = criterion.benchmark_group("xts 128");
+    let mut group = criterion.benchmark_group("xts 128 aes 128");
 
     let mut rng = rand::thread_rng();
 
@@ -92,7 +92,7 @@ fn encryption_128(criterion: &mut Criterion) {
 }
 
 fn encryption_256(criterion: &mut Criterion) {
-    let mut group = criterion.benchmark_group("xts 256");
+    let mut group = criterion.benchmark_group("xts 128 aes 256");
 
     let mut rng = rand::thread_rng();
 
