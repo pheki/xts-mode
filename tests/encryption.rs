@@ -29,7 +29,7 @@ fn random_bytes(len: usize) -> Vec<u8> {
 }
 
 #[test]
-fn recrypt() {
+fn recrypt_128() {
     let plaintext = b"Yu9b5QgBck wBogw5ATwAHLEV YWDPK2mS";
     assert_eq!(plaintext.len(), 34);
     let mut buffer = plaintext.to_owned();
@@ -47,7 +47,7 @@ fn recrypt() {
 }
 
 #[test]
-fn recrypt_no_remainder() {
+fn recrypt_no_remainder_128() {
     let plaintext = b"ATwAHLEVk WDPK2m5D1ZY9QpLyW 3aK9";
     assert_eq!(plaintext.len(), 32);
     let mut buffer = plaintext.to_owned();
@@ -64,8 +64,48 @@ fn recrypt_no_remainder() {
     assert_eq!(&buffer[..], &plaintext[..]);
 }
 
+#[test]
+fn recrypt_256() {
+    let plaintext = b"Yu9b5QgBck wBogw5ATwAHLEV YWDPK2mS";
+    assert_eq!(plaintext.len(), 34);
+    let mut buffer = plaintext.to_owned();
+
+    let xts = make_xts_aes_256(&hex!(
+        "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f101112131415161718191a1b1c1d1e1f"
+    ));
+
+    let tweak = get_tweak_default(0);
+    xts.encrypt_sector(&mut buffer, tweak);
+    let _encrypted = buffer.clone();
+    xts.decrypt_sector(&mut buffer, tweak);
+
+    assert_eq!(&buffer[..], &plaintext[..]);
+}
+
+#[test]
+fn recrypt_no_remainder_256() {
+    let plaintext = b"ATwAHLEVk WDPK2m5D1ZY9QpLyW 3aK9";
+    assert_eq!(plaintext.len(), 32);
+    let mut buffer = plaintext.to_owned();
+
+    let xts = make_xts_aes_256(&hex!(
+        "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f101112131415161718191a1b1c1d1e1f"
+    ));
+
+    let tweak = get_tweak_default(0);
+    xts.encrypt_sector(&mut buffer, tweak);
+    let _encrypted = buffer.clone();
+    xts.decrypt_sector(&mut buffer, tweak);
+
+    assert_eq!(&buffer[..], &plaintext[..]);
+}
+
 /*
- * Test deterministically with known files
+ * Test deterministically with known files, encrypted with the OpenSSL command
+ * line tool, for example using AES-256:
+ * ```
+ * $ openssl enc -aes-256-xts -in test_files/file_name -out test_files/file_name.aes256 -K key_in_hex -iv 0
+ * ```
  */
 
 // Seems like OpenSSL resets the tweak every 0x1000 bytes
@@ -85,13 +125,14 @@ fn encrypt_file_no_remainder() {
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
     let reference =
-        fs::read("test_files/random_no_remainder.enc").expect("could not read reference");
+        fs::read("test_files/random_no_remainder.aes128").expect("could not read reference");
     assert_eq!(&buffer[..], &reference[..]);
 }
 
 #[test]
 fn decrypt_file_no_remainder() {
-    let mut buffer = fs::read("test_files/random_no_remainder.enc").expect("could not read input");
+    let mut buffer =
+        fs::read("test_files/random_no_remainder.aes128").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
     let xts = make_xts_aes_128(&hex!(
@@ -116,18 +157,82 @@ fn encrypt_file_with_remainder() {
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
     let reference =
-        fs::read("test_files/random_with_remainder.enc").expect("could not read reference");
+        fs::read("test_files/random_with_remainder.aes128").expect("could not read reference");
     assert_eq!(&buffer[..], &reference[..]);
 }
 
 #[test]
 fn decrypt_file_with_remainder() {
     let mut buffer =
-        fs::read("test_files/random_with_remainder.enc").expect("could not read input");
+        fs::read("test_files/random_with_remainder.aes128").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
     let xts = make_xts_aes_128(&hex!(
         "a5f85b18e5d06f13aa3a2dca389d776ab195a6feb1827980eb00abb0f75ea609"
+    ));
+
+    xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
+
+    let reference = fs::read("test_files/random_with_remainder").expect("could not read reference");
+    assert_eq!(&buffer[..], &reference[..]);
+}
+
+#[test]
+fn encrypt_file_no_remainder_256() {
+    let mut buffer = fs::read("test_files/random_no_remainder").expect("could not read input");
+    assert_eq!(buffer.len(), 0x3000);
+
+    let xts = make_xts_aes_256(&hex!(
+        "7abc23ab77076d474a7adb32126755012da76589c21da20fb67fa762b7102d7445f250417b3b86bdf6f1d33a8f5a8e04c1ba440f30b59d6828478ec232253750"
+    ));
+
+    xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
+
+    let reference =
+        fs::read("test_files/random_no_remainder.aes256").expect("could not read reference");
+    assert_eq!(&buffer[..], &reference[..]);
+}
+
+#[test]
+fn decrypt_file_no_remainder_256() {
+    let mut buffer =
+        fs::read("test_files/random_no_remainder.aes256").expect("could not read input");
+    assert_eq!(buffer.len(), 0x3000);
+
+    let xts = make_xts_aes_256(&hex!(
+        "7abc23ab77076d474a7adb32126755012da76589c21da20fb67fa762b7102d7445f250417b3b86bdf6f1d33a8f5a8e04c1ba440f30b59d6828478ec232253750"
+    ));
+
+    xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
+
+    let reference = fs::read("test_files/random_no_remainder").expect("could not read reference");
+    assert_eq!(&buffer[..], &reference[..]);
+}
+
+#[test]
+fn encrypt_file_with_remainder_256() {
+    let mut buffer = fs::read("test_files/random_with_remainder").expect("could not read input");
+    assert_eq!(buffer.len(), 20001);
+
+    let xts = make_xts_aes_256(&hex!(
+        "8e941b9fc427ca7e4b27dd8038d3d883ec6df6dd7ef6b3c38239acf2d68d9c308e8ec6027cc425a3c71b082fe1a857e3c0c39352979f9c48329a03ac0d95cdcc"
+    ));
+
+    xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
+
+    let reference =
+        fs::read("test_files/random_with_remainder.aes256").expect("could not read reference");
+    assert_eq!(&buffer[..], &reference[..]);
+}
+
+#[test]
+fn decrypt_file_with_remainder_256() {
+    let mut buffer =
+        fs::read("test_files/random_with_remainder.aes256").expect("could not read input");
+    assert_eq!(buffer.len(), 20001);
+
+    let xts = make_xts_aes_256(&hex!(
+        "8e941b9fc427ca7e4b27dd8038d3d883ec6df6dd7ef6b3c38239acf2d68d9c308e8ec6027cc425a3c71b082fe1a857e3c0c39352979f9c48329a03ac0d95cdcc"
     ));
 
     xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
