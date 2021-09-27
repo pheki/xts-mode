@@ -12,9 +12,13 @@ documentation = "https://docs.rs/xts-mode"
 keywords = ["encryption", "xts"]
 exclude = ["test_files"]
 
+[features]
+openssl_tests = ["openssl"]
+
 [dependencies]
 cipher = "0.3"
 byteorder = "1"
+openssl = { version = "0.10", optional = true }
 
 [dev-dependencies]
 # For tests

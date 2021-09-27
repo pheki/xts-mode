@@ -2,8 +2,7 @@
 
 [XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in rust.
 Currently only 128-bit (16-byte) algorithms are supported, if you require other
-sizes, please open an issue. Note that AES-256 uses 128-bit blocks, so it should
-work as is.
+sizes, please open an issue.
 
 ## Examples:
 
@@ -31,6 +30,33 @@ let first_sector_index = 0;
 xts.encrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
 
 // Decrypt data in the buffer
+xts.decrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
+
+assert_eq!(&buffer[..], &plaintext[..]);
+```
+
+AES-256 works too:
+```rust
+use aes::{Aes256, NewBlockCipher, cipher::generic_array::GenericArray};
+use xts_mode::{Xts128, get_tweak_default};
+
+// Load the encryption key
+let key = [1; 64];
+let plaintext = [5; 0x400];
+
+// Load the data to be encrypted
+let mut buffer = plaintext.to_owned();
+
+let cipher_1 = Aes256::new(GenericArray::from_slice(&key[..32]));
+let cipher_2 = Aes256::new(GenericArray::from_slice(&key[32..]));
+
+let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
+
+let sector_size = 0x200;
+let first_sector_index = 0;
+
+xts.encrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
+
 xts.decrypt_area(&mut buffer, sector_size, first_sector_index, get_tweak_default);
 
 assert_eq!(&buffer[..], &plaintext[..]);
