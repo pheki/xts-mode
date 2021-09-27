@@ -100,13 +100,11 @@ fn recrypt_no_remainder_256() {
     assert_eq!(&buffer[..], &plaintext[..]);
 }
 
-/*
- * Test deterministically with known files, encrypted with the OpenSSL command
- * line tool, for example using AES-256:
- * ```
- * $ openssl enc -aes-256-xts -in test_files/file_name -out test_files/file_name.aes256 -K key_in_hex -iv 0
- * ```
- */
+// Test deterministically with known files, encrypted with the OpenSSL command
+// line tool, for example using AES-256:
+// ```
+// $ openssl enc -aes-256-xts -in test_files/file_name -out test_files/file_name.aes256 -K key_in_hex -iv 0
+// ```
 
 // Seems like OpenSSL resets the tweak every 0x1000 bytes
 fn get_tweak_openssl(_sector_index: u128) -> [u8; 0x10] {
@@ -241,9 +239,7 @@ fn decrypt_file_with_remainder_256() {
     assert_eq!(&buffer[..], &reference[..]);
 }
 
-/*
- * Test decrypting and encrypting random keys
- */
+// Test decrypting and encrypting random keys
 
 #[test]
 fn random_key_recrypt_128() {
@@ -411,9 +407,7 @@ mod openssl_tests {
         }
     }
 
-    /*
-     * Test decrypting and encrypting random bytes with random keys
-     */
+    // Test decrypting and encrypting random bytes with random keys
 
     #[test]
     fn encrypt_random_bytes_128_no_remainder_compare_to_openssl() {
