@@ -1,8 +1,8 @@
 # xts-mode
 
-[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in rust.
-Currently only 128-bit (16-byte) algorithms are supported, if you require other
-sizes, please open an issue.
+[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in Rust.
+
+Currently this implementation supports only ciphers with 128-bit (16-byte) block size (distinct from key size). Note that AES-256 uses 128-bit blocks, so it works with this crate. If you require other cipher block sizes, please open an issue.
 
 ## Examples:
 
