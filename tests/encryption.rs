@@ -3,7 +3,7 @@ use std::fs;
 #[macro_use]
 extern crate hex_literal;
 use aes::{cipher::generic_array::GenericArray, Aes128, Aes256};
-use cipher::NewBlockCipher;
+use cipher::KeyInit;
 use rand::Rng;
 use xts_mode::{get_tweak_default, Xts128};
 

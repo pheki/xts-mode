@@ -7,7 +7,7 @@ Currently this implementation supports only ciphers with 128-bit (16-byte) block
 
 Encrypting and decrypting multiple sectors at a time:
 ```
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -36,7 +36,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 AES-256 works too:
 ```
-use aes::{Aes256, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes256, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -63,7 +63,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -91,7 +91,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
@@ -128,7 +128,7 @@ use std::convert::TryInto;
 use byteorder::{ByteOrder, LittleEndian};
 use cipher::generic_array::typenum::Unsigned;
 use cipher::generic_array::GenericArray;
-use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt};
+use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
 /// [here](https://github.com/RustCrypto/block-ciphers/issues/48#issuecomment-574440662).
@@ -160,7 +160,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// - If there's less than a single block in the sector.
     pub fn encrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
         assert_eq!(
-            <C as BlockCipher>::BlockSize::to_usize(),
+            <C as BlockSizeUser>::BlockSize::to_usize(),
             128 / 8,
             "Wrong block size"
         );
@@ -229,7 +229,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// - If there's less than a single block in the sector.
     pub fn decrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
         assert_eq!(
-            <C as BlockCipher>::BlockSize::to_usize(),
+            <C as BlockSizeUser>::BlockSize::to_usize(),
             128 / 8,
             "Wrong block size"
         );
