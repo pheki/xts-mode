@@ -2,7 +2,7 @@
 name = "xts-mode"
 version = "0.4.1"
 authors = ["Aphek <bilkow@tutanota.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 readme = "README.md"
