@@ -16,14 +16,14 @@ exclude = ["test_files"]
 openssl_tests = ["openssl"]
 
 [dependencies]
-cipher = "0.3"
+cipher = "0.4"
 byteorder = "1"
 openssl = { version = "0.10", optional = true }
 
 [dev-dependencies]
 # For tests
 hex-literal = "0.3"
-aes = "0.7.5"
+aes = "0.8"
 
 # For benchmarks
 criterion = "0.3"

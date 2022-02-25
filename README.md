@@ -8,7 +8,7 @@ Currently this implementation supports only ciphers with 128-bit (16-byte) block
 
 Encrypting and decrypting multiple sectors at a time:
 ```rust
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -37,7 +37,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 AES-256 works too:
 ```rust
-use aes::{Aes256, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes256, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -64,7 +64,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```rust
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -92,7 +92,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```rust
-use aes::{Aes128, NewBlockCipher, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
 use xts_mode::{Xts128, get_tweak_default};
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
