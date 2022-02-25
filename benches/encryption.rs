@@ -63,8 +63,11 @@ fn encryption_128(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 1024);
     group.bench_function("sector size 1024 B", |benchmark| {
+        let mut i = 0;
         benchmark.iter(|| {
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 
@@ -72,8 +75,11 @@ fn encryption_128(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 8192);
     group.bench_function("sector size 8192 B", |benchmark| {
+        let mut i = 0;
         benchmark.iter(|| {
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 
@@ -81,12 +87,11 @@ fn encryption_128(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 16384);
     group.bench_function("sector size 16384 B", |benchmark| {
-        // let mut i = 0;
+        let mut i = 0;
         benchmark.iter(|| {
-            // let tweak = get_tweak_default(i);
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
-            // xts.encrypt_sector(&mut buffer, tweak);
-            // i = i.wrapping_add(1);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 }
@@ -146,8 +151,11 @@ fn encryption_256(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 1024);
     group.bench_function("sector size 1024 B", |benchmark| {
+        let mut i = 0;
         benchmark.iter(|| {
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 
@@ -155,8 +163,11 @@ fn encryption_256(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 8192);
     group.bench_function("sector size 8192 B", |benchmark| {
+        let mut i = 0;
         benchmark.iter(|| {
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 
@@ -164,12 +175,11 @@ fn encryption_256(criterion: &mut Criterion) {
     rng.fill_bytes(&mut buffer);
     assert_eq!(buffer.len(), 16384);
     group.bench_function("sector size 16384 B", |benchmark| {
-        // let mut i = 0;
+        let mut i = 0;
         benchmark.iter(|| {
-            // let tweak = get_tweak_default(i);
-            xts.encrypt_area(&mut buffer, 0x200, 0, get_tweak_default);
-            // xts.encrypt_sector(&mut buffer, tweak);
-            // i = i.wrapping_add(1);
+            let tweak = get_tweak_default(i);
+            xts.encrypt_sector(&mut buffer, tweak);
+            i = i.wrapping_add(1);
         })
     });
 }
