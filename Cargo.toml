@@ -13,11 +13,13 @@ keywords = ["encryption", "xts"]
 exclude = ["test_files"]
 
 [features]
+default = ["std"]
+std = []
 openssl_tests = ["openssl"]
 
 [dependencies]
 cipher = "0.4"
-byteorder = "1"
+byteorder = { version = "1", default-features = false }
 # Is actually a dev-dependency enabled only for/by openssl_tests, but dev-dependencies can't be
 # optional
 openssl = { version = "0.10", optional = true }
