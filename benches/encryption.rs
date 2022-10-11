@@ -68,9 +68,5 @@ fn encryption_256(criterion: &mut Criterion) {
     bench_encrypt_sector(&mut group, &mut rng, &xts);
 }
 
-criterion_group!(
-    benches,
-    encryption_128,
-    encryption_256,
-);
+criterion_group!(benches, encryption_128, encryption_256,);
 criterion_main!(benches);
