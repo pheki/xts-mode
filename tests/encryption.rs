@@ -22,8 +22,7 @@ fn make_xts_aes_256(key: &[u8]) -> Xts128<Aes256> {
 }
 
 fn random_bytes(len: usize) -> Vec<u8> {
-    let mut key = Vec::<u8>::with_capacity(len);
-    key.resize(len, 0);
+    let mut key = vec![0; len];
     rand::thread_rng().try_fill(&mut key[..]).unwrap();
     key
 }
@@ -40,7 +39,7 @@ fn recrypt_128() {
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
-    let _encrypted = buffer.clone();
+    let _encrypted = buffer;
     xts.decrypt_sector(&mut buffer, tweak);
 
     assert_eq!(&buffer[..], &plaintext[..]);
@@ -58,7 +57,7 @@ fn recrypt_no_remainder_128() {
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
-    let _encrypted = buffer.clone();
+    let _encrypted = buffer;
     xts.decrypt_sector(&mut buffer, tweak);
 
     assert_eq!(&buffer[..], &plaintext[..]);
@@ -76,7 +75,7 @@ fn recrypt_256() {
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
-    let _encrypted = buffer.clone();
+    let _encrypted = buffer;
     xts.decrypt_sector(&mut buffer, tweak);
 
     assert_eq!(&buffer[..], &plaintext[..]);
@@ -94,7 +93,7 @@ fn recrypt_no_remainder_256() {
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
-    let _encrypted = buffer.clone();
+    let _encrypted = buffer;
     xts.decrypt_sector(&mut buffer, tweak);
 
     assert_eq!(&buffer[..], &plaintext[..]);
@@ -252,7 +251,7 @@ fn random_key_recrypt_128() {
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
-        let _encrypted = buffer.clone();
+        let _encrypted = buffer;
         xts.decrypt_sector(&mut buffer, tweak);
 
         assert_eq!(&buffer[..], &plaintext[..]);
@@ -270,7 +269,7 @@ fn random_key_recrypt_128_no_remainder() {
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
-        let _encrypted = buffer.clone();
+        let _encrypted = buffer;
         xts.decrypt_sector(&mut buffer, tweak);
 
         assert_eq!(&buffer[..], &plaintext[..]);
@@ -288,7 +287,7 @@ fn random_key_recrypt_256() {
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
-        let _encrypted = buffer.clone();
+        let _encrypted = buffer;
         xts.decrypt_sector(&mut buffer, tweak);
 
         assert_eq!(&buffer[..], &plaintext[..]);
@@ -306,7 +305,7 @@ fn random_key_recrypt_256_no_remainder() {
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
-        let _encrypted = buffer.clone();
+        let _encrypted = buffer;
         xts.decrypt_sector(&mut buffer, tweak);
 
         assert_eq!(&buffer[..], &plaintext[..]);
