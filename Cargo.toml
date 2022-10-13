@@ -11,6 +11,7 @@ repository = "https://github.com/pheki/xts-mode"
 documentation = "https://docs.rs/xts-mode"
 keywords = ["encryption", "xts"]
 exclude = ["test_files"]
+categories = ["cryptography", "no-std", "block-cipher"]
 rust-version = "1.57"
 
 [features]
