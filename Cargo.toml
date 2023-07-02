@@ -28,11 +28,11 @@ openssl = { version = "0.10", optional = true }
 
 [dev-dependencies]
 # For tests
-hex-literal = "0.3"
+hex-literal = "0.4"
 aes = "0.8"
 
 # For benchmarks
-criterion = "0.4"
+criterion = "0.5"
 rand = "0.8"
 
 [[bench]]
