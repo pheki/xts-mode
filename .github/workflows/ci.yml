@@ -16,7 +16,7 @@ jobs:
           - rust: stable
           - rust: beta
           - rust: nightly
-          - rust: 1.57.0
+          - rust: 1.60.0
           - name: macOS
             os: macos
             rust: stable
