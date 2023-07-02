@@ -32,7 +32,7 @@ hex-literal = "0.4"
 aes = "0.8"
 
 # For benchmarks
-criterion = "0.5"
+criterion = "0.4"
 rand = "0.8"
 
 [[bench]]
