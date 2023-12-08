@@ -38,6 +38,10 @@ jobs:
       - run: cargo test --features "openssl_tests"
         # Skip OpenSSL tests on windows
         if: matrix.os != 'windows'
+      # Also test using minimal versions of dependencies
+      - run: rustup toolchain add nightly
+      - run: cargo +nightly update -Z minimal-versions
+      - run: cargo test
 
   clippy:
     name: Clippy
