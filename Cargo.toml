@@ -17,22 +17,21 @@ rust-version = "1.57"
 [features]
 default = ["std"]
 std = []
-openssl_tests = ["openssl"]
+openssl_tests = ["dep:openssl"]
+benchmarks = ["dep:criterion"]
 
 [dependencies]
-cipher = "0.4"
-byteorder = { version = "1", default-features = false }
-# Is actually a dev-dependency enabled only for/by openssl_tests, but dev-dependencies can't be
-# optional
-openssl = { version = "0.10", optional = true }
+cipher = "0.4.4"
+byteorder = { version = "1.5", default-features = false }
+# Actually dev-dependencies enabled only for openssl tests and benchmarks,
+# but dev-dependencies can't be optional.
+openssl = { version = "0.10.61", optional = true }
+criterion = {version = "0.5", optional = true }
 
 [dev-dependencies]
 # For tests
 hex-literal = "0.4"
 aes = "0.8"
-
-# For benchmarks
-criterion = "0.4"
 rand = "0.8"
 
 [[bench]]
