@@ -23,7 +23,7 @@ fn make_xts_aes_256(key: &[u8]) -> Xts128<Aes256> {
 
 fn random_bytes(len: usize) -> Vec<u8> {
     let mut key = vec![0; len];
-    rand::thread_rng().try_fill(&mut key[..]).unwrap();
+    rand::rng().fill(&mut key[..]);
     key
 }
 
