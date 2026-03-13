@@ -5,33 +5,30 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+env:
+  RUSTFLAGS: "-D warnings"
+
 jobs:
   test:
-    name: ${{matrix.name || format('Rust {0}', matrix.rust)}}
+    name: ${{matrix.name || format('Rust {0}', matrix.toolchain)}}
     runs-on: ${{matrix.os || 'ubuntu'}}-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - rust: stable
-          - rust: beta
-          - rust: nightly
-          - rust: 1.63.0
+          - toolchain: stable
+          - toolchain: beta
+          - toolchain: nightly
+          - toolchain: 1.63.0
           - name: macOS
             os: macos
-            rust: stable
+            toolchain: stable
           - name: Windows
             os: windows
-            rust: stable
-    env:
-      RUSTFLAGS: -D warnings
+            toolchain: stable
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{matrix.rust}}
-          profile: minimal
-          override: true
+      - uses: actions/checkout@v6
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }} 
       - run: cargo build
       - run: cargo test
       - run: cargo test --no-default-features
@@ -43,58 +40,49 @@ jobs:
       - run: cargo +nightly update -Z minimal-versions
       - run: cargo test
 
+  no-std:
+    name: Build no-std on ${{format('Rust {0}', matrix.toolchain)}}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - toolchain: stable
+          - toolchain: beta
+          - toolchain: nightly
+          - toolchain: 1.63.0
+    steps:
+      - uses: actions/checkout@v6
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }} 
+      - run: rustup target add thumbv6m-none-eabi
+      - run: cargo build --no-default-features --target thumbv6m-none-eabi
+      # Also build using minimal versions of dependencies
+      - run: rustup toolchain add nightly
+      - run: cargo +nightly update -Z minimal-versions
+      - run: cargo build --no-default-features --target thumbv6m-none-eabi
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
-          profile: minimal
-          override: true
-      - run: cargo clippy --tests -- -Dclippy::all
+      - uses: actions/checkout@v6
+      - run: rustup update stable
+      - run: cargo clippy --all-targets --all-features
 
   rustfmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt
-          profile: minimal
-          override: true
+      - uses: actions/checkout@v6
+      - run: rustup update stable
       - run: cargo fmt --check
 
   doc:
     name: Doc
     runs-on: ubuntu-latest
     env:
-      RUSTDOCFLAGS: -D warnings
+      RUSTDOCFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: rust-docs
-          profile: minimal
-          override: true
+      - uses: actions/checkout@v6
+      - run: rustup update stable
       - run: cargo doc --no-deps --all-features
-
-  no-std:
-    name: Build no-std
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: thumbv6m-none-eabi
-          profile: minimal
-          override: true
-      - run: cargo build --no-default-features --target thumbv6m-none-eabi
