@@ -337,16 +337,12 @@ mod openssl_tests {
 
         fn encrypt_sector(&self, sector: &mut [u8], tweak: [u8; 16]) {
             let ciphertext = encrypt(self.cipher, &self.key[..], Some(&tweak), sector).unwrap();
-            for i in 0..ciphertext.len() {
-                (*sector)[i] = ciphertext[i];
-            }
+            sector[..ciphertext.len()].copy_from_slice(&ciphertext);
         }
 
         fn decrypt_sector(&self, sector: &mut [u8], tweak: [u8; 16]) {
             let ciphertext = decrypt(self.cipher, &self.key[..], Some(&tweak), sector).unwrap();
-            for i in 0..ciphertext.len() {
-                (*sector)[i] = ciphertext[i];
-            }
+            sector[..ciphertext.len()].copy_from_slice(&ciphertext);
         }
 
         pub fn encrypt_area(
