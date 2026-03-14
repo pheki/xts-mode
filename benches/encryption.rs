@@ -25,7 +25,7 @@ fn bench_encrypt_sector<
         buffer.resize(size, 0);
         rng.fill_bytes(&mut buffer);
         assert_eq!(buffer.len(), size);
-        group.bench_function(&format!("sector size {} B", size), |benchmark| {
+        group.bench_function(format!("sector size {} B", size), |benchmark| {
             let mut i = 0;
             benchmark.iter(|| {
                 let tweak = get_tweak_default(i);
@@ -39,7 +39,7 @@ fn bench_encrypt_sector<
 fn encryption_128(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("xts-128 aes-128 enc");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut key = [0; 32];
     rng.fill_bytes(&mut key);
@@ -55,7 +55,7 @@ fn encryption_128(criterion: &mut Criterion) {
 fn encryption_256(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("xts-128 aes-256 enc");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut key = [0; 64];
     rng.fill_bytes(&mut key);
