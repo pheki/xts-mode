@@ -128,8 +128,8 @@ use core::convert::TryFrom;
 use core::convert::TryInto;
 
 use byteorder::{ByteOrder, LittleEndian};
-use cipher::generic_array::typenum::Unsigned;
 use cipher::generic_array::GenericArray;
+use cipher::generic_array::typenum::Unsigned;
 use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed

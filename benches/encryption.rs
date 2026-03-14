@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate criterion;
 
-use xts_mode::{get_tweak_default, Xts128};
+use xts_mode::{Xts128, get_tweak_default};
 
-use aes::{cipher::generic_array::GenericArray, Aes128, Aes256};
+use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
 use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, KeyInit};
-use criterion::{measurement::Measurement, BenchmarkGroup, Criterion};
+use criterion::{BenchmarkGroup, Criterion, measurement::Measurement};
 use rand::RngCore;
 
 const BENCHED_SECTOR_SIZES: [usize; 6] = [16, 64, 256, 1024, 8192, 16384];

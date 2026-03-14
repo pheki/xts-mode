@@ -2,10 +2,10 @@ use std::fs;
 
 #[macro_use]
 extern crate hex_literal;
-use aes::{cipher::generic_array::GenericArray, Aes128, Aes256};
+use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
 use cipher::KeyInit;
 use rand::Rng;
-use xts_mode::{get_tweak_default, Xts128};
+use xts_mode::{Xts128, get_tweak_default};
 
 fn make_xts_aes_128(key: &[u8]) -> Xts128<Aes128> {
     let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
@@ -315,7 +315,7 @@ fn random_key_recrypt_256_no_remainder() {
 #[cfg(feature = "openssl_tests")]
 mod openssl_tests {
     use super::*;
-    use openssl::symm::{decrypt, encrypt, Cipher};
+    use openssl::symm::{Cipher, decrypt, encrypt};
     use std::convert::TryFrom;
 
     // openssl does (in crypto/modes/xts128.c):

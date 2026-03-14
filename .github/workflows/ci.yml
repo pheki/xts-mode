@@ -23,7 +23,7 @@ jobs:
           - toolchain: stable
           - toolchain: beta
           - toolchain: nightly
-          - toolchain: 1.63.0
+          - toolchain: 1.85.0
           - name: macOS
             os: macos
             toolchain: stable
@@ -54,7 +54,7 @@ jobs:
           - toolchain: stable
           - toolchain: beta
           - toolchain: nightly
-          - toolchain: 1.63.0
+          - toolchain: 1.85.0
     steps:
       - uses: actions/checkout@v6
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }} 

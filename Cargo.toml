@@ -2,7 +2,7 @@
 name = "xts-mode"
 version = "0.5.1"
 authors = ["Aphek <bilkow@tutanota.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 readme = "README.md"
@@ -12,7 +12,7 @@ documentation = "https://docs.rs/xts-mode"
 keywords = ["encryption", "xts", "block-cipher"]
 exclude = ["test_files"]
 categories = ["cryptography", "no-std"]
-rust-version = "1.63"
+rust-version = "1.85"
 
 [features]
 default = ["std"]
