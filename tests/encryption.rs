@@ -4,7 +4,7 @@ use std::fs;
 extern crate hex_literal;
 use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
 use cipher::KeyInit;
-use rand::Rng;
+use rand::RngExt;
 use xts_mode::{Xts128, get_tweak_default};
 
 fn make_xts_aes_128(key: &[u8]) -> Xts128<Aes128> {

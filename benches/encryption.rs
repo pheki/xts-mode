@@ -6,15 +6,11 @@ use xts_mode::{Xts128, get_tweak_default};
 use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
 use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, KeyInit};
 use criterion::{BenchmarkGroup, Criterion, measurement::Measurement};
-use rand::RngCore;
+use rand::Rng;
 
 const BENCHED_SECTOR_SIZES: [usize; 6] = [16, 64, 256, 1024, 8192, 16384];
 
-fn bench_encrypt_sector<
-    M: Measurement,
-    R: RngCore,
-    C: BlockEncrypt + BlockDecrypt + BlockCipher,
->(
+fn bench_encrypt_sector<M: Measurement, R: Rng, C: BlockEncrypt + BlockDecrypt + BlockCipher>(
     group: &mut BenchmarkGroup<M>,
     rng: &mut R,
     xts: &Xts128<C>,
