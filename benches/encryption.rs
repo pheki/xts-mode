@@ -3,14 +3,18 @@ extern crate criterion;
 
 use xts_mode::{Xts128, get_tweak_default};
 
-use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
-use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, KeyInit};
+use aes::{Aes128, Aes256};
+use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit, consts::U16};
 use criterion::{BenchmarkGroup, Criterion, measurement::Measurement};
 use rand::Rng;
 
 const BENCHED_SECTOR_SIZES: [usize; 6] = [16, 64, 256, 1024, 8192, 16384];
 
-fn bench_encrypt_sector<M: Measurement, R: Rng, C: BlockEncrypt + BlockDecrypt + BlockCipher>(
+fn bench_encrypt_sector<
+    M: Measurement,
+    R: Rng,
+    C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt,
+>(
     group: &mut BenchmarkGroup<M>,
     rng: &mut R,
     xts: &Xts128<C>,
@@ -40,8 +44,8 @@ fn encryption_128(criterion: &mut Criterion) {
     let mut key = [0; 32];
     rng.fill_bytes(&mut key);
 
-    let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
-    let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
+    let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
+    let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -56,8 +60,8 @@ fn encryption_256(criterion: &mut Criterion) {
     let mut key = [0; 64];
     rng.fill_bytes(&mut key);
 
-    let cipher_1 = Aes256::new(GenericArray::from_slice(&key[..32]));
-    let cipher_2 = Aes256::new(GenericArray::from_slice(&key[32..]));
+    let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
+    let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
 
     let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
 

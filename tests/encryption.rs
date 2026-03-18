@@ -2,21 +2,21 @@ use std::fs;
 
 #[macro_use]
 extern crate hex_literal;
-use aes::{Aes128, Aes256, cipher::generic_array::GenericArray};
+use aes::{Aes128, Aes256};
 use cipher::KeyInit;
 use rand::RngExt;
 use xts_mode::{Xts128, get_tweak_default};
 
-fn make_xts_aes_128(key: &[u8]) -> Xts128<Aes128> {
-    let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
-    let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
+fn make_xts_aes_128(key: &[u8; 32]) -> Xts128<Aes128> {
+    let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
+    let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
 
     Xts128::<Aes128>::new(cipher_1, cipher_2)
 }
 
-fn make_xts_aes_256(key: &[u8]) -> Xts128<Aes256> {
-    let cipher_1 = Aes256::new(GenericArray::from_slice(&key[..32]));
-    let cipher_2 = Aes256::new(GenericArray::from_slice(&key[32..]));
+fn make_xts_aes_256(key: &[u8; 64]) -> Xts128<Aes256> {
+    let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
+    let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
 
     Xts128::<Aes256>::new(cipher_1, cipher_2)
 }
@@ -247,7 +247,7 @@ fn random_key_recrypt_128() {
     let mut buffer = plaintext.to_owned();
 
     for _ in 0..100 {
-        let xts = make_xts_aes_128(&random_bytes(32));
+        let xts = make_xts_aes_128((&random_bytes(32)[..]).try_into().unwrap());
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
@@ -265,7 +265,7 @@ fn random_key_recrypt_128_no_remainder() {
     let mut buffer = plaintext.to_owned();
 
     for _ in 0..100 {
-        let xts = make_xts_aes_128(&random_bytes(32));
+        let xts = make_xts_aes_128((&random_bytes(32)[..]).try_into().unwrap());
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
@@ -283,7 +283,7 @@ fn random_key_recrypt_256() {
     let mut buffer = plaintext.to_owned();
 
     for _ in 0..100 {
-        let xts = make_xts_aes_256(&random_bytes(64));
+        let xts = make_xts_aes_256((&random_bytes(64)[..]).try_into().unwrap());
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
@@ -301,7 +301,7 @@ fn random_key_recrypt_256_no_remainder() {
     let mut buffer = plaintext.to_owned();
 
     for _ in 0..100 {
-        let xts = make_xts_aes_256(&random_bytes(64));
+        let xts = make_xts_aes_256((&random_bytes(64)[..]).try_into().unwrap());
 
         let tweak = get_tweak_default(0);
         xts.encrypt_sector(&mut buffer, tweak);
@@ -412,7 +412,7 @@ mod openssl_tests {
 
             let key = random_bytes(32);
 
-            let xts = make_xts_aes_128(&key);
+            let xts = make_xts_aes_128((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_128_xts(), key);
 
             xts.encrypt_area(&mut buffer, 0x100, 0, get_tweak_default);
@@ -430,7 +430,7 @@ mod openssl_tests {
 
             let key = random_bytes(64);
 
-            let xts = make_xts_aes_256(&key);
+            let xts = make_xts_aes_256((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_256_xts(), key);
 
             xts.encrypt_area(&mut buffer, 0x100, 0, get_tweak_default);
@@ -448,7 +448,7 @@ mod openssl_tests {
 
             let key = random_bytes(32);
 
-            let xts = make_xts_aes_128(&key);
+            let xts = make_xts_aes_128((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_128_xts(), key);
 
             xts.decrypt_area(&mut buffer, 0x100, 0, get_tweak_default);
@@ -466,7 +466,7 @@ mod openssl_tests {
 
             let key = random_bytes(64);
 
-            let xts = make_xts_aes_256(&key);
+            let xts = make_xts_aes_256((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_256_xts(), key);
 
             xts.decrypt_area(&mut buffer, 0x100, 0, get_tweak_default);
@@ -486,7 +486,7 @@ mod openssl_tests {
 
             let key = random_bytes(32);
 
-            let xts = make_xts_aes_128(&key);
+            let xts = make_xts_aes_128((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_128_xts(), key);
 
             xts.encrypt_area(&mut buffer, 0x20, 0, get_tweak_default);
@@ -504,7 +504,7 @@ mod openssl_tests {
 
             let key = random_bytes(64);
 
-            let xts = make_xts_aes_256(&key);
+            let xts = make_xts_aes_256((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_256_xts(), key);
 
             xts.encrypt_area(&mut buffer, 0x20, 0, get_tweak_default);
@@ -522,7 +522,7 @@ mod openssl_tests {
 
             let key = random_bytes(32);
 
-            let xts = make_xts_aes_128(&key);
+            let xts = make_xts_aes_128((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_128_xts(), key);
 
             xts.decrypt_area(&mut buffer, 0x20, 0, get_tweak_default);
@@ -540,7 +540,7 @@ mod openssl_tests {
 
             let key = random_bytes(64);
 
-            let xts = make_xts_aes_256(&key);
+            let xts = make_xts_aes_256((&key[..]).try_into().unwrap());
             let openssl = OpensslXts::new(Cipher::aes_256_xts(), key);
 
             xts.decrypt_area(&mut buffer, 0x20, 0, get_tweak_default);

@@ -9,7 +9,7 @@ Currently this implementation supports only ciphers with 128-bit (16-byte) block
 
 Encrypting and decrypting multiple sectors at a time:
 ```
-use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -19,8 +19,8 @@ let plaintext = [5; 0x400];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
-let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
+let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
+let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -38,7 +38,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 AES-256 works too:
 ```
-use aes::{Aes256, cipher::KeyInit, cipher::generic_array::GenericArray};
+use aes::{Aes256, cipher::KeyInit};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -48,8 +48,8 @@ let plaintext = [5; 0x400];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes256::new(GenericArray::from_slice(&key[..32]));
-let cipher_2 = Aes256::new(GenericArray::from_slice(&key[32..]));
+let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
+let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
 
 let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
 
@@ -65,7 +65,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```
-use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
@@ -75,8 +75,8 @@ let plaintext = [5; 0x200];
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new(GenericArray::from_slice(&key[..16]));
-let cipher_2 = Aes128::new(GenericArray::from_slice(&key[16..]));
+let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
+let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -93,7 +93,7 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```
-use aes::{Aes128, cipher::KeyInit, cipher::generic_array::GenericArray};
+use aes::{Aes128, cipher::KeyInit};
 use xts_mode::{Xts128, get_tweak_default};
 
 pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
@@ -106,8 +106,8 @@ let header_key = &[0; 0x20];
 // Read into buffer header to be decrypted
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new(GenericArray::from_slice(&header_key[..0x10]));
-let cipher_2 = Aes128::new(GenericArray::from_slice(&header_key[0x10..]));
+let cipher_1 = Aes128::new((&header_key[..0x10]).try_into().unwrap());
+let cipher_2 = Aes128::new((&header_key[0x10..]).try_into().unwrap());
 
 let mut xts = Xts128::new(cipher_1, cipher_2);
 
@@ -124,29 +124,29 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 ```
 */
 
-use core::convert::TryFrom;
-use core::convert::TryInto;
+use core::convert::{TryFrom, TryInto};
 
-use cipher::generic_array::GenericArray;
-use cipher::generic_array::typenum::Unsigned;
-use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, BlockSizeUser};
+use cipher::consts::U16;
+use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
 /// [here](https://github.com/RustCrypto/block-ciphers/issues/48#issuecomment-574440662).
-pub struct Xts128<C: BlockEncrypt + BlockDecrypt + BlockCipher> {
+pub struct Xts128<C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt> {
     /// This cipher is actually used to encrypt the blocks.
     cipher_1: C,
     /// This cipher is used only to compute the tweak at each sector start.
     cipher_2: C,
 }
 
-impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
+impl<C> Xts128<C>
+where
+    C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt,
+{
     /// Creates a new Xts128 using two cipher instances: the first one's used to encrypt the blocks
     /// and the second one to compute the tweak at the start of each sector.
     ///
-    /// Usually both cipher's are the same algorithm and the key is stored as double sized
-    /// (256 bits for Aes128), and the key is split in half, the first half used for cipher_1 and
-    /// the other for cipher_2.
+    /// Usually both ciphers are the same algorithm, the key is stored as double sized (256 bits for Aes128).
+    /// When using, the key is split in half, the first half used for cipher_1 and the other for cipher_2.
     ///
     /// If you require support for different cipher types, or block sizes different than 16 bytes,
     /// open an issue.
@@ -157,15 +157,8 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// Encrypts a single sector in place using the given tweak.
     ///
     /// # Panics
-    /// - If the block size is not 16 bytes.
     /// - If there's less than a single block in the sector.
     pub fn encrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
-        assert_eq!(
-            <C as BlockSizeUser>::BlockSize::to_usize(),
-            128 / 8,
-            "Wrong block size"
-        );
-
         assert!(
             sector.len() >= 16,
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
@@ -175,8 +168,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
         let need_stealing = sector.len() % 16 != 0;
 
         // Compute tweak
-        self.cipher_2
-            .encrypt_block(GenericArray::from_mut_slice(&mut tweak));
+        self.cipher_2.encrypt_block((&mut tweak).into());
 
         let nosteal_block_count = if need_stealing {
             block_count - 1
@@ -185,11 +177,10 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
         };
 
         for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
-            let block = &mut sector[i..i + 16];
+            let block: &mut [u8; 16] = (&mut sector[i..i + 16]).try_into().unwrap();
 
             xor(block, &tweak);
-            self.cipher_1
-                .encrypt_block(GenericArray::from_mut_slice(block));
+            self.cipher_1.encrypt_block(block.into());
             xor(block, &tweak);
 
             tweak = galois_field_128_mul_le(tweak);
@@ -205,8 +196,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
                 .unwrap();
 
             xor(&mut block, &next_to_last_tweak);
-            self.cipher_1
-                .encrypt_block(GenericArray::from_mut_slice(&mut block));
+            self.cipher_1.encrypt_block((&mut block).into());
             xor(&mut block, &next_to_last_tweak);
 
             let mut last_block = [0u8; 16];
@@ -214,8 +204,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
             last_block[remaining..].copy_from_slice(&block[remaining..]);
 
             xor(&mut last_block, &last_tweak);
-            self.cipher_1
-                .encrypt_block(GenericArray::from_mut_slice(&mut last_block));
+            self.cipher_1.encrypt_block((&mut last_block).into());
             xor(&mut last_block, &last_tweak);
 
             sector[16 * (block_count - 1)..16 * block_count].copy_from_slice(&last_block);
@@ -226,15 +215,8 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// Decrypts a single sector in place using the given tweak.
     ///
     /// # Panics
-    /// - If the block size is not 16 bytes.
     /// - If there's less than a single block in the sector.
     pub fn decrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
-        assert_eq!(
-            <C as BlockSizeUser>::BlockSize::to_usize(),
-            128 / 8,
-            "Wrong block size"
-        );
-
         assert!(
             sector.len() >= 16,
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
@@ -244,8 +226,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
         let need_stealing = sector.len() % 16 != 0;
 
         // Compute tweak
-        self.cipher_2
-            .encrypt_block(GenericArray::from_mut_slice(&mut tweak));
+        self.cipher_2.encrypt_block((&mut tweak).into());
 
         let nosteal_block_count = if need_stealing {
             block_count - 1
@@ -254,11 +235,10 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
         };
 
         for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
-            let block = &mut sector[i..i + 16];
+            let block: &mut [u8; 16] = (&mut sector[i..i + 16]).try_into().unwrap();
 
             xor(block, &tweak);
-            self.cipher_1
-                .decrypt_block(GenericArray::from_mut_slice(block));
+            self.cipher_1.decrypt_block(block.into());
             xor(block, &tweak);
 
             tweak = galois_field_128_mul_le(tweak);
@@ -274,8 +254,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
                 .unwrap();
 
             xor(&mut block, &last_tweak);
-            self.cipher_1
-                .decrypt_block(GenericArray::from_mut_slice(&mut block));
+            self.cipher_1.decrypt_block((&mut block).into());
             xor(&mut block, &last_tweak);
 
             let mut last_block = [0u8; 16];
@@ -283,8 +262,7 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
             last_block[remaining..].copy_from_slice(&block[remaining..]);
 
             xor(&mut last_block, &next_to_last_tweak);
-            self.cipher_1
-                .decrypt_block(GenericArray::from_mut_slice(&mut last_block));
+            self.cipher_1.decrypt_block((&mut last_block).into());
             xor(&mut last_block, &next_to_last_tweak);
 
             sector[16 * (block_count - 1)..16 * block_count].copy_from_slice(&last_block);
@@ -298,7 +276,6 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// `get_tweak_fn` is usually `get_tweak_default`.
     ///
     /// # Panics
-    /// - If the block size is not 16 bytes.
     /// - If there's less than a single block in the last sector.
     pub fn encrypt_area(
         &self,
@@ -332,7 +309,6 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
     /// `get_tweak_fn` is usually `get_tweak_default`.
     ///
     /// # Panics
-    /// - If the block size is not 16 bytes.
     /// - If there's less than a single block in the last sector.
     pub fn decrypt_area(
         &self,
@@ -362,8 +338,8 @@ impl<C: BlockEncrypt + BlockDecrypt + BlockCipher> Xts128<C> {
 }
 
 /// This is the default way to get the tweak, which just consists of separating the sector_index
-/// in an array of 16 bytes with little endian. May be called to get the tweak for every sector
-/// or passed directly to `(en/de)crypt_area`, which will basically do that.
+/// in an array of 16 bytes in little endian byte order. May be called to get the tweak for every
+/// sector or passed directly to `(en/de)crypt_area`, which will basically do that.
 pub fn get_tweak_default(sector_index: u128) -> [u8; 16] {
     sector_index.to_le_bytes()
 }
