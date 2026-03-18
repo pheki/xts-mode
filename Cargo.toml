@@ -20,7 +20,6 @@ benchmarks = ["dep:criterion"]
 
 [dependencies]
 cipher = "0.4.4"
-byteorder = { version = "1.5.0", default-features = false }
 # Actually dev-dependencies enabled only for openssl tests and benchmarks,
 # but dev-dependencies can't be optional.
 openssl = { version = "0.10.78", optional = true }

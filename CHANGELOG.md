@@ -10,4 +10,5 @@ The format is based on [Common Changelog](https://common-changelog.org/) and [Ke
 
 ### Removed
 
-- **Breaking:** remove unused `std` feature.
+- **Breaking:** Remove unused `std` feature.
+- Remove `byteorder` dependency.

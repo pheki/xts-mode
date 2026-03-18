@@ -127,7 +127,6 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 use core::convert::TryFrom;
 use core::convert::TryInto;
 
-use byteorder::{ByteOrder, LittleEndian};
 use cipher::generic_array::GenericArray;
 use cipher::generic_array::typenum::Unsigned;
 use cipher::{BlockCipher, BlockDecrypt, BlockEncrypt, BlockSizeUser};
@@ -385,9 +384,8 @@ fn galois_field_128_mul_le(tweak_source: [u8; 16]) -> [u8; 16] {
 
     let mut tweak = [0; 16];
 
-    // byteorder used for performance, as it uses core::ptr::copy_nonoverlapping
-    LittleEndian::write_u64(&mut tweak[0..8], new_low_bytes);
-    LittleEndian::write_u64(&mut tweak[8..16], new_high_bytes);
+    tweak[..8].copy_from_slice(&new_low_bytes.to_le_bytes());
+    tweak[8..].copy_from_slice(&new_high_bytes.to_le_bytes());
 
     tweak
 }
