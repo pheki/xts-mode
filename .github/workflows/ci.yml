@@ -86,3 +86,17 @@ jobs:
       - uses: actions/checkout@v6
       - run: rustup update stable
       - run: cargo doc --no-deps --all-features
+
+  readme:
+    name: Check if README.md is outdated
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-readme
+      - name: Update README.md
+        run: cargo readme > README.md
+      - name: Check diff
+        run: git add . && git diff --quiet && git diff --cached --quiet
+      
