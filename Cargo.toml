@@ -15,8 +15,6 @@ categories = ["cryptography", "no-std"]
 rust-version = "1.85"
 
 [features]
-default = ["std"]
-std = []
 openssl_tests = ["dep:openssl"]
 benchmarks = ["dep:criterion"]
 

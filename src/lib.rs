@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
 /*!
 [XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in Rust.
@@ -385,7 +385,7 @@ fn galois_field_128_mul_le(tweak_source: [u8; 16]) -> [u8; 16] {
 
     let mut tweak = [0; 16];
 
-    // byteorder used for performance, as it uses std::ptr::copy_nonoverlapping
+    // byteorder used for performance, as it uses core::ptr::copy_nonoverlapping
     LittleEndian::write_u64(&mut tweak[0..8], new_low_bytes);
     LittleEndian::write_u64(&mut tweak[8..16], new_high_bytes);
 

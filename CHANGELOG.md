@@ -7,3 +7,7 @@ The format is based on [Common Changelog](https://common-changelog.org/) and [Ke
 ### Changed
 
 - Increase MSRV to 1.85 and update to edition 2024.
+
+### Removed
+
+- **Breaking:** remove unused `std` feature.
