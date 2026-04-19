@@ -4,7 +4,10 @@ extern crate criterion;
 use xts_mode::{Xts128, get_tweak_default};
 
 use aes::{Aes128, Aes256};
-use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit, consts::U16};
+use cipher::{
+    Array, BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser, KeyInit,
+    consts::{U16, U32, U64},
+};
 use criterion::{BenchmarkGroup, Criterion, measurement::Measurement};
 use rand::Rng;
 
@@ -41,11 +44,12 @@ fn encryption_128(criterion: &mut Criterion) {
 
     let mut rng = rand::rng();
 
-    let mut key = [0; 32];
+    let mut key: Array<u8, U32> = Array([0u8; 32]);
     rng.fill_bytes(&mut key);
 
-    let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-    let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+    let (key_1, key_2) = key.split::<U16>();
+    let cipher_1 = Aes128::new(&key_1);
+    let cipher_2 = Aes128::new(&key_2);
 
     let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -57,11 +61,12 @@ fn encryption_256(criterion: &mut Criterion) {
 
     let mut rng = rand::rng();
 
-    let mut key = [0; 64];
+    let mut key: Array<u8, U64> = Array([0u8; 64]);
     rng.fill_bytes(&mut key);
 
-    let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
-    let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
+    let (key_1, key_2) = key.split::<U32>();
+    let cipher_1 = Aes256::new(&key_1);
+    let cipher_2 = Aes256::new(&key_2);
 
     let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
 

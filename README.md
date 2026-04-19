@@ -8,18 +8,20 @@ Currently this implementation supports only ciphers with 128-bit (16-byte) block
 
 Encrypting and decrypting multiple sectors at a time:
 ```rust
-use aes::{Aes128, cipher::KeyInit};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
 use xts_mode::{Xts128, get_tweak_default};
 
-// Load the encryption key
-let key = [1; 32];
+// Load encryption key
+let key: Array<u8, U32> = Array([1; 32]);
 let plaintext = [5; 0x400];
 
-// Load the data to be encrypted
+// Load data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U16>();
+let cipher_1 = Aes128::new(&key_1);
+let cipher_2 = Aes128::new(&key_2);
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -37,18 +39,20 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 AES-256 works too:
 ```rust
-use aes::{Aes256, cipher::KeyInit};
+use aes::Aes256;
+use aes::cipher::{Array, KeyInit, consts::{U32, U64}};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
-let key = [1; 64];
+let key: Array<u8, U64> = Array([1; 64]);
 let plaintext = [5; 0x400];
 
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
-let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U32>();
+let cipher_1 = Aes256::new(&key_1);
+let cipher_2 = Aes256::new(&key_2);
 
 let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
 
@@ -64,18 +68,21 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```rust
-use aes::{Aes128, cipher::KeyInit};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
 use xts_mode::{Xts128, get_tweak_default};
 
-// Load the encryption key
-let key = [1; 32];
+// Load encryption key
+let key: Array<u8, U32> = Array([1; 32]);
+
 let plaintext = [5; 0x200];
 
-// Load the data to be encrypted
+// Load data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U16>();
+let cipher_1 = Aes128::new(&key_1);
+let cipher_2 = Aes128::new(&key_2);
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -92,23 +99,25 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```rust
-use aes::{Aes128, cipher::KeyInit};
-use xts_mode::{Xts128, get_tweak_default};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
+use xts_mode::Xts128;
 
-pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
-    sector_index.to_be_bytes()
+pub fn get_nintendo_tweak(sector_index: u128) -> Array<u8, U16> {
+    Array(sector_index.to_be_bytes())
 }
 
-// Load the header key
-let header_key = &[0; 0x20];
+// Load header key
+let header_key: Array<u8, U32> = Array([0; 0x20]);
 
-// Read into buffer header to be decrypted
+// Read header to be decrypted into buffer
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new((&header_key[..0x10]).try_into().unwrap());
-let cipher_2 = Aes128::new((&header_key[0x10..]).try_into().unwrap());
+let (header_key_1, header_key_2) = header_key.split::<U16>();
+let cipher_1 = Aes128::new(&header_key_1);
+let cipher_2 = Aes128::new(&header_key_2);
 
-let mut xts = Xts128::new(cipher_1, cipher_2);
+let xts = Xts128::new(cipher_1, cipher_2);
 
 // Decrypt the first 0x400 bytes of the header in 0x200 sections
 xts.decrypt_area(&mut buffer[0..0x400], 0x200, 0, get_nintendo_tweak);

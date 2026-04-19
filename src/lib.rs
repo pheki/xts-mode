@@ -9,18 +9,20 @@ Currently this implementation supports only ciphers with 128-bit (16-byte) block
 
 Encrypting and decrypting multiple sectors at a time:
 ```
-use aes::{Aes128, cipher::KeyInit};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
 use xts_mode::{Xts128, get_tweak_default};
 
-// Load the encryption key
-let key = [1; 32];
+// Load encryption key
+let key: Array<u8, U32> = Array([1; 32]);
 let plaintext = [5; 0x400];
 
-// Load the data to be encrypted
+// Load data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U16>();
+let cipher_1 = Aes128::new(&key_1);
+let cipher_2 = Aes128::new(&key_2);
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -38,18 +40,20 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 AES-256 works too:
 ```
-use aes::{Aes256, cipher::KeyInit};
+use aes::Aes256;
+use aes::cipher::{Array, KeyInit, consts::{U32, U64}};
 use xts_mode::{Xts128, get_tweak_default};
 
 // Load the encryption key
-let key = [1; 64];
+let key: Array<u8, U64> = Array([1; 64]);
 let plaintext = [5; 0x400];
 
 // Load the data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
-let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U32>();
+let cipher_1 = Aes256::new(&key_1);
+let cipher_2 = Aes256::new(&key_2);
 
 let xts = Xts128::<Aes256>::new(cipher_1, cipher_2);
 
@@ -65,18 +69,21 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Encrypting and decrypting a single sector:
 ```
-use aes::{Aes128, cipher::KeyInit};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
 use xts_mode::{Xts128, get_tweak_default};
 
-// Load the encryption key
-let key = [1; 32];
+// Load encryption key
+let key: Array<u8, U32> = Array([1; 32]);
+
 let plaintext = [5; 0x200];
 
-// Load the data to be encrypted
+// Load data to be encrypted
 let mut buffer = plaintext.to_owned();
 
-let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+let (key_1, key_2) = key.split::<U16>();
+let cipher_1 = Aes128::new(&key_1);
+let cipher_2 = Aes128::new(&key_2);
 
 let xts = Xts128::<Aes128>::new(cipher_1, cipher_2);
 
@@ -93,23 +100,25 @@ assert_eq!(&buffer[..], &plaintext[..]);
 
 Decrypting a [NCA](https://switchbrew.org/wiki/NCA_Format) (nintendo content archive) header:
 ```
-use aes::{Aes128, cipher::KeyInit};
-use xts_mode::{Xts128, get_tweak_default};
+use aes::Aes128;
+use aes::cipher::{Array, KeyInit, consts::{U16, U32}};
+use xts_mode::Xts128;
 
-pub fn get_nintendo_tweak(sector_index: u128) -> [u8; 0x10] {
-    sector_index.to_be_bytes()
+pub fn get_nintendo_tweak(sector_index: u128) -> Array<u8, U16> {
+    Array(sector_index.to_be_bytes())
 }
 
-// Load the header key
-let header_key = &[0; 0x20];
+// Load header key
+let header_key: Array<u8, U32> = Array([0; 0x20]);
 
-// Read into buffer header to be decrypted
+// Read header to be decrypted into buffer
 let mut buffer = vec![0; 0xC00];
 
-let cipher_1 = Aes128::new((&header_key[..0x10]).try_into().unwrap());
-let cipher_2 = Aes128::new((&header_key[0x10..]).try_into().unwrap());
+let (header_key_1, header_key_2) = header_key.split::<U16>();
+let cipher_1 = Aes128::new(&header_key_1);
+let cipher_2 = Aes128::new(&header_key_2);
 
-let mut xts = Xts128::new(cipher_1, cipher_2);
+let xts = Xts128::new(cipher_1, cipher_2);
 
 // Decrypt the first 0x400 bytes of the header in 0x200 sections
 xts.decrypt_area(&mut buffer[0..0x400], 0x200, 0, get_nintendo_tweak);
@@ -124,9 +133,10 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 ```
 */
 
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 
-use cipher::consts::U16;
+pub use cipher::array::{self, Array};
+use cipher::consts::{U8, U16};
 use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
@@ -158,7 +168,7 @@ where
     ///
     /// # Panics
     /// - If there's less than a single block in the sector.
-    pub fn encrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
+    pub fn encrypt_sector(&self, sector: &mut [u8], mut tweak: Array<u8, U16>) {
         assert!(
             sector.len() >= 16,
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
@@ -168,7 +178,7 @@ where
         let need_stealing = sector.len() % 16 != 0;
 
         // Compute tweak
-        self.cipher_2.encrypt_block((&mut tweak).into());
+        self.cipher_2.encrypt_block(&mut tweak);
 
         let nosteal_block_count = if need_stealing {
             block_count - 1
@@ -177,10 +187,10 @@ where
         };
 
         for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
-            let block: &mut [u8; 16] = (&mut sector[i..i + 16]).try_into().unwrap();
+            let block = Array::slice_as_mut_array(&mut sector[i..i + 16]).unwrap();
 
             xor(block, &tweak);
-            self.cipher_1.encrypt_block(block.into());
+            self.cipher_1.encrypt_block(block);
             xor(block, &tweak);
 
             tweak = galois_field_128_mul_le(tweak);
@@ -189,26 +199,27 @@ where
         if need_stealing {
             let next_to_last_tweak = tweak;
             let last_tweak = galois_field_128_mul_le(tweak);
+            let remainder = sector.len() % 16;
 
-            let remaining = sector.len() % 16;
-            let mut block: [u8; 16] = sector[16 * (block_count - 1)..16 * block_count]
-                .try_into()
-                .unwrap();
+            let (full_block, partial_block) = sector[16 * (block_count - 1)..].split_at_mut(16);
+            let full_block = Array::slice_as_mut_array(full_block).unwrap();
 
-            xor(&mut block, &next_to_last_tweak);
-            self.cipher_1.encrypt_block((&mut block).into());
-            xor(&mut block, &next_to_last_tweak);
+            xor(full_block, &next_to_last_tweak);
+            self.cipher_1.encrypt_block(full_block);
+            xor(full_block, &next_to_last_tweak);
 
-            let mut last_block = [0u8; 16];
-            last_block[..remaining].copy_from_slice(&sector[16 * block_count..]);
-            last_block[remaining..].copy_from_slice(&block[remaining..]);
+            let (last_ciphertext, cipher_plaintext) = full_block.split_at(remainder);
+
+            let mut last_block = Array([0u8; 16]);
+            last_block[..remainder].copy_from_slice(partial_block);
+            last_block[remainder..].copy_from_slice(cipher_plaintext);
 
             xor(&mut last_block, &last_tweak);
-            self.cipher_1.encrypt_block((&mut last_block).into());
+            self.cipher_1.encrypt_block(&mut last_block);
             xor(&mut last_block, &last_tweak);
 
-            sector[16 * (block_count - 1)..16 * block_count].copy_from_slice(&last_block);
-            sector[16 * block_count..].copy_from_slice(&block[..remaining]);
+            partial_block.copy_from_slice(last_ciphertext);
+            full_block.copy_from_slice(&last_block);
         }
     }
 
@@ -216,7 +227,7 @@ where
     ///
     /// # Panics
     /// - If there's less than a single block in the sector.
-    pub fn decrypt_sector(&self, sector: &mut [u8], mut tweak: [u8; 16]) {
+    pub fn decrypt_sector(&self, sector: &mut [u8], mut tweak: Array<u8, U16>) {
         assert!(
             sector.len() >= 16,
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
@@ -226,7 +237,7 @@ where
         let need_stealing = sector.len() % 16 != 0;
 
         // Compute tweak
-        self.cipher_2.encrypt_block((&mut tweak).into());
+        self.cipher_2.encrypt_block(&mut tweak);
 
         let nosteal_block_count = if need_stealing {
             block_count - 1
@@ -235,10 +246,10 @@ where
         };
 
         for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
-            let block: &mut [u8; 16] = (&mut sector[i..i + 16]).try_into().unwrap();
+            let block = Array::slice_as_mut_array(&mut sector[i..i + 16]).unwrap();
 
             xor(block, &tweak);
-            self.cipher_1.decrypt_block(block.into());
+            self.cipher_1.decrypt_block(block);
             xor(block, &tweak);
 
             tweak = galois_field_128_mul_le(tweak);
@@ -247,26 +258,27 @@ where
         if need_stealing {
             let next_to_last_tweak = tweak;
             let last_tweak = galois_field_128_mul_le(tweak);
+            let remainder = sector.len() % 16;
 
-            let remaining = sector.len() % 16;
-            let mut block: [u8; 16] = sector[16 * (block_count - 1)..16 * block_count]
-                .try_into()
-                .unwrap();
+            let (full_block, partial_block) = sector[16 * (block_count - 1)..].split_at_mut(16);
+            let full_block = Array::slice_as_mut_array(full_block).unwrap();
 
-            xor(&mut block, &last_tweak);
-            self.cipher_1.decrypt_block((&mut block).into());
-            xor(&mut block, &last_tweak);
+            xor(full_block, &last_tweak);
+            self.cipher_1.decrypt_block(full_block);
+            xor(full_block, &last_tweak);
 
-            let mut last_block = [0u8; 16];
-            last_block[..remaining].copy_from_slice(&sector[16 * block_count..]);
-            last_block[remaining..].copy_from_slice(&block[remaining..]);
+            let (last_plaintext, cipher_plaintext) = full_block.split_at(remainder);
+
+            let mut last_block = Array([0u8; 16]);
+            last_block[..remainder].copy_from_slice(partial_block);
+            last_block[remainder..].copy_from_slice(cipher_plaintext);
 
             xor(&mut last_block, &next_to_last_tweak);
-            self.cipher_1.decrypt_block((&mut last_block).into());
+            self.cipher_1.decrypt_block(&mut last_block);
             xor(&mut last_block, &next_to_last_tweak);
 
-            sector[16 * (block_count - 1)..16 * block_count].copy_from_slice(&last_block);
-            sector[16 * block_count..].copy_from_slice(&block[..remaining]);
+            partial_block.copy_from_slice(last_plaintext);
+            full_block.copy_from_slice(&last_block);
         }
     }
 
@@ -282,7 +294,7 @@ where
         area: &mut [u8],
         sector_size: usize,
         first_sector_index: u128,
-        get_tweak_fn: impl Fn(u128) -> [u8; 16],
+        get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
     ) {
         let area_len = area.len();
         let mut chunks = area.chunks_exact_mut(sector_size);
@@ -315,7 +327,7 @@ where
         area: &mut [u8],
         sector_size: usize,
         first_sector_index: u128,
-        get_tweak_fn: impl Fn(u128) -> [u8; 16],
+        get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
     ) {
         let area_len = area.len();
         let mut chunks = area.chunks_exact_mut(sector_size);
@@ -340,8 +352,8 @@ where
 /// This is the default way to get the tweak, which just consists of separating the sector_index
 /// in an array of 16 bytes in little endian byte order. May be called to get the tweak for every
 /// sector or passed directly to `(en/de)crypt_area`, which will basically do that.
-pub fn get_tweak_default(sector_index: u128) -> [u8; 16] {
-    sector_index.to_le_bytes()
+pub fn get_tweak_default(sector_index: u128) -> Array<u8, U16> {
+    Array(sector_index.to_le_bytes())
 }
 
 #[inline(always)]
@@ -352,13 +364,14 @@ fn xor(buf: &mut [u8], key: &[u8]) {
     }
 }
 
-fn galois_field_128_mul_le(tweak_source: [u8; 16]) -> [u8; 16] {
-    let low_bytes = u64::from_le_bytes(tweak_source[0..8].try_into().unwrap());
-    let high_bytes = u64::from_le_bytes(tweak_source[8..16].try_into().unwrap());
+fn galois_field_128_mul_le(tweak_source: Array<u8, U16>) -> Array<u8, U16> {
+    let (tweak_source_low, tweak_source_high) = tweak_source.split::<U8>();
+    let low_bytes = u64::from_le_bytes(tweak_source_low.0);
+    let high_bytes = u64::from_le_bytes(tweak_source_high.0);
     let new_low_bytes = (low_bytes << 1) ^ if (high_bytes >> 63) != 0 { 0x87 } else { 0x00 };
     let new_high_bytes = (low_bytes >> 63) | (high_bytes << 1);
 
-    let mut tweak = [0; 16];
+    let mut tweak = Array([0; 16]);
 
     tweak[..8].copy_from_slice(&new_low_bytes.to_le_bytes());
     tweak[8..].copy_from_slice(&new_high_bytes.to_le_bytes());

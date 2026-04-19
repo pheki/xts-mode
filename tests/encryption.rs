@@ -3,20 +3,25 @@ use std::fs;
 #[macro_use]
 extern crate hex_literal;
 use aes::{Aes128, Aes256};
-use cipher::KeyInit;
+use cipher::{
+    Array, KeyInit,
+    consts::{U16, U32, U64},
+};
 use rand::RngExt;
 use xts_mode::{Xts128, get_tweak_default};
 
-fn make_xts_aes_128(key: &[u8; 32]) -> Xts128<Aes128> {
-    let cipher_1 = Aes128::new((&key[..16]).try_into().unwrap());
-    let cipher_2 = Aes128::new((&key[16..]).try_into().unwrap());
+fn make_xts_aes_128(key: &Array<u8, U32>) -> Xts128<Aes128> {
+    let (key_1, key_2) = key.split_ref::<U16>();
+    let cipher_1 = Aes128::new(key_1);
+    let cipher_2 = Aes128::new(key_2);
 
     Xts128::<Aes128>::new(cipher_1, cipher_2)
 }
 
-fn make_xts_aes_256(key: &[u8; 64]) -> Xts128<Aes256> {
-    let cipher_1 = Aes256::new((&key[..32]).try_into().unwrap());
-    let cipher_2 = Aes256::new((&key[32..]).try_into().unwrap());
+fn make_xts_aes_256(key: &Array<u8, U64>) -> Xts128<Aes256> {
+    let (key_1, key_2) = key.split_ref::<U32>();
+    let cipher_1 = Aes256::new(key_1);
+    let cipher_2 = Aes256::new(key_2);
 
     Xts128::<Aes256>::new(cipher_1, cipher_2)
 }
@@ -33,9 +38,9 @@ fn recrypt_128() {
     assert_eq!(plaintext.len(), 34);
     let mut buffer = plaintext.to_owned();
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f"
-    ));
+    )));
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
@@ -51,9 +56,9 @@ fn recrypt_no_remainder_128() {
     assert_eq!(plaintext.len(), 32);
     let mut buffer = plaintext.to_owned();
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f"
-    ));
+    )));
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
@@ -69,9 +74,9 @@ fn recrypt_256() {
     assert_eq!(plaintext.len(), 34);
     let mut buffer = plaintext.to_owned();
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f101112131415161718191a1b1c1d1e1f"
-    ));
+    )));
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
@@ -87,9 +92,9 @@ fn recrypt_no_remainder_256() {
     assert_eq!(plaintext.len(), 32);
     let mut buffer = plaintext.to_owned();
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f101112131415161718191a1b1c1d1e1f"
-    ));
+    )));
 
     let tweak = get_tweak_default(0);
     xts.encrypt_sector(&mut buffer, tweak);
@@ -106,8 +111,8 @@ fn recrypt_no_remainder_256() {
 // ```
 
 // Seems like OpenSSL resets the tweak every 0x1000 bytes
-fn get_tweak_openssl(_sector_index: u128) -> [u8; 0x10] {
-    [0; 0x10]
+fn get_tweak_openssl(_sector_index: u128) -> Array<u8, U16> {
+    Array([0; 0x10])
 }
 
 #[test]
@@ -115,9 +120,9 @@ fn encrypt_file_no_remainder() {
     let mut buffer = fs::read("test_files/random_no_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "f1e4acd1ca1258b2751c538f512cd8d2d26d7867a3e1245c5c4462cd398d443e"
-    ));
+    )));
 
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -132,9 +137,9 @@ fn decrypt_file_no_remainder() {
         fs::read("test_files/random_no_remainder.aes128").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "f1e4acd1ca1258b2751c538f512cd8d2d26d7867a3e1245c5c4462cd398d443e"
-    ));
+    )));
 
     xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -147,9 +152,9 @@ fn encrypt_file_with_remainder() {
     let mut buffer = fs::read("test_files/random_with_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "a5f85b18e5d06f13aa3a2dca389d776ab195a6feb1827980eb00abb0f75ea609"
-    ));
+    )));
 
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -164,9 +169,9 @@ fn decrypt_file_with_remainder() {
         fs::read("test_files/random_with_remainder.aes128").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let xts = make_xts_aes_128(&hex!(
+    let xts = make_xts_aes_128(&Array(hex!(
         "a5f85b18e5d06f13aa3a2dca389d776ab195a6feb1827980eb00abb0f75ea609"
-    ));
+    )));
 
     xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -179,9 +184,9 @@ fn encrypt_file_no_remainder_256() {
     let mut buffer = fs::read("test_files/random_no_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "7abc23ab77076d474a7adb32126755012da76589c21da20fb67fa762b7102d7445f250417b3b86bdf6f1d33a8f5a8e04c1ba440f30b59d6828478ec232253750"
-    ));
+    )));
 
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -196,9 +201,9 @@ fn decrypt_file_no_remainder_256() {
         fs::read("test_files/random_no_remainder.aes256").expect("could not read input");
     assert_eq!(buffer.len(), 0x3000);
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "7abc23ab77076d474a7adb32126755012da76589c21da20fb67fa762b7102d7445f250417b3b86bdf6f1d33a8f5a8e04c1ba440f30b59d6828478ec232253750"
-    ));
+    )));
 
     xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -211,9 +216,9 @@ fn encrypt_file_with_remainder_256() {
     let mut buffer = fs::read("test_files/random_with_remainder").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "8e941b9fc427ca7e4b27dd8038d3d883ec6df6dd7ef6b3c38239acf2d68d9c308e8ec6027cc425a3c71b082fe1a857e3c0c39352979f9c48329a03ac0d95cdcc"
-    ));
+    )));
 
     xts.encrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -228,9 +233,9 @@ fn decrypt_file_with_remainder_256() {
         fs::read("test_files/random_with_remainder.aes256").expect("could not read input");
     assert_eq!(buffer.len(), 20001);
 
-    let xts = make_xts_aes_256(&hex!(
+    let xts = make_xts_aes_256(&Array(hex!(
         "8e941b9fc427ca7e4b27dd8038d3d883ec6df6dd7ef6b3c38239acf2d68d9c308e8ec6027cc425a3c71b082fe1a857e3c0c39352979f9c48329a03ac0d95cdcc"
-    ));
+    )));
 
     xts.decrypt_area(&mut buffer, 0x1000, 0, get_tweak_openssl);
 
@@ -335,12 +340,12 @@ mod openssl_tests {
             Self { cipher, key }
         }
 
-        fn encrypt_sector(&self, sector: &mut [u8], tweak: [u8; 16]) {
+        fn encrypt_sector(&self, sector: &mut [u8], tweak: Array<u8, U16>) {
             let ciphertext = encrypt(self.cipher, &self.key[..], Some(&tweak), sector).unwrap();
             sector[..ciphertext.len()].copy_from_slice(&ciphertext);
         }
 
-        fn decrypt_sector(&self, sector: &mut [u8], tweak: [u8; 16]) {
+        fn decrypt_sector(&self, sector: &mut [u8], tweak: Array<u8, U16>) {
             let ciphertext = decrypt(self.cipher, &self.key[..], Some(&tweak), sector).unwrap();
             sector[..ciphertext.len()].copy_from_slice(&ciphertext);
         }
@@ -350,7 +355,7 @@ mod openssl_tests {
             area: &mut [u8],
             sector_size: usize,
             first_sector_index: u128,
-            get_tweak_fn: impl Fn(u128) -> [u8; 16],
+            get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
         ) {
             let area_len = area.len();
             let mut chunks = area.chunks_exact_mut(sector_size);
@@ -378,7 +383,7 @@ mod openssl_tests {
             area: &mut [u8],
             sector_size: usize,
             first_sector_index: u128,
-            get_tweak_fn: impl Fn(u128) -> [u8; 16],
+            get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
         ) {
             let area_len = area.len();
             let mut chunks = area.chunks_exact_mut(sector_size);
