@@ -16,3 +16,4 @@ The format is based on [Common Changelog](https://common-changelog.org/) and [Ke
 
 - **Breaking:** Remove unused `std` feature.
 - Remove `byteorder` dependency.
+- Remove trait bounds from the Xts128 struct, applying them only to implementations.

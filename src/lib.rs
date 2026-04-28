@@ -141,7 +141,7 @@ use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
 /// [here](https://github.com/RustCrypto/block-ciphers/issues/48#issuecomment-574440662).
-pub struct Xts128<C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt> {
+pub struct Xts128<C> {
     /// This cipher is actually used to encrypt the blocks.
     cipher_1: C,
     /// This cipher is used only to compute the tweak at each sector start.
@@ -150,7 +150,7 @@ pub struct Xts128<C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + Block
 
 impl<C> Xts128<C>
 where
-    C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt,
+    C: BlockSizeUser<BlockSize = U16>,
 {
     /// Creates a new Xts128 using two cipher instances: the first one's used to encrypt the blocks
     /// and the second one to compute the tweak at the start of each sector.
@@ -163,7 +163,12 @@ where
     pub fn new(cipher_1: C, cipher_2: C) -> Xts128<C> {
         Xts128 { cipher_1, cipher_2 }
     }
+}
 
+impl<C> Xts128<C>
+where
+    C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt,
+{
     /// Encrypts a single sector in place using the given tweak.
     ///
     /// # Panics
@@ -223,6 +228,44 @@ where
         }
     }
 
+    /// Encrypts a whole area in place, usually consisting of multiple sectors.
+    ///
+    /// The tweak is computed at the start of every sector using get_tweak_fn(sector_index).
+    /// `get_tweak_fn` is usually `get_tweak_default`.
+    ///
+    /// # Panics
+    /// - If there's less than a single block in the last sector.
+    pub fn encrypt_area(
+        &self,
+        area: &mut [u8],
+        sector_size: usize,
+        first_sector_index: u128,
+        get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
+    ) {
+        let area_len = area.len();
+        let mut chunks = area.chunks_exact_mut(sector_size);
+        for (i, chunk) in (&mut chunks).enumerate() {
+            let tweak = get_tweak_fn(
+                u128::try_from(i).expect("usize cannot be bigger than u128") + first_sector_index,
+            );
+            self.encrypt_sector(chunk, tweak);
+        }
+        let remainder = chunks.into_remainder();
+
+        if !remainder.is_empty() {
+            let i = area_len / sector_size;
+            let tweak = get_tweak_fn(
+                u128::try_from(i).expect("usize cannot be bigger than u128") + first_sector_index,
+            );
+            self.encrypt_sector(remainder, tweak);
+        }
+    }
+}
+
+impl<C> Xts128<C>
+where
+    C: BlockSizeUser<BlockSize = U16> + BlockCipherEncrypt + BlockCipherDecrypt,
+{
     /// Decrypts a single sector in place using the given tweak.
     ///
     /// # Panics
@@ -279,39 +322,6 @@ where
 
             partial_block.copy_from_slice(last_plaintext);
             full_block.copy_from_slice(&last_block);
-        }
-    }
-
-    /// Encrypts a whole area in place, usually consisting of multiple sectors.
-    ///
-    /// The tweak is computed at the start of every sector using get_tweak_fn(sector_index).
-    /// `get_tweak_fn` is usually `get_tweak_default`.
-    ///
-    /// # Panics
-    /// - If there's less than a single block in the last sector.
-    pub fn encrypt_area(
-        &self,
-        area: &mut [u8],
-        sector_size: usize,
-        first_sector_index: u128,
-        get_tweak_fn: impl Fn(u128) -> Array<u8, U16>,
-    ) {
-        let area_len = area.len();
-        let mut chunks = area.chunks_exact_mut(sector_size);
-        for (i, chunk) in (&mut chunks).enumerate() {
-            let tweak = get_tweak_fn(
-                u128::try_from(i).expect("usize cannot be bigger than u128") + first_sector_index,
-            );
-            self.encrypt_sector(chunk, tweak);
-        }
-        let remainder = chunks.into_remainder();
-
-        if !remainder.is_empty() {
-            let i = area_len / sector_size;
-            let tweak = get_tweak_fn(
-                u128::try_from(i).expect("usize cannot be bigger than u128") + first_sector_index,
-            );
-            self.encrypt_sector(remainder, tweak);
         }
     }
 
