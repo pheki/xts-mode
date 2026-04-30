@@ -179,19 +179,12 @@ where
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
         );
 
-        let block_count = sector.len() / 16;
-        let need_stealing = sector.len() % 16 != 0;
-
         // Compute tweak
         self.cipher_2.encrypt_block(&mut tweak);
 
-        let nosteal_block_count = if need_stealing {
-            block_count - 1
-        } else {
-            block_count
-        };
+        let block_count = sector.len() / 16;
 
-        for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
+        for i in (0..sector.len()).step_by(16).take(block_count - 1) {
             let block = Array::slice_as_mut_array(&mut sector[i..i + 16]).unwrap();
 
             xor(block, &tweak);
@@ -201,18 +194,21 @@ where
             tweak = galois_field_128_mul_le(tweak);
         }
 
-        if need_stealing {
-            let next_to_last_tweak = tweak;
+        {
+            let block =
+                Array::slice_as_mut_array(&mut sector[16 * (block_count - 1)..16 * block_count])
+                    .unwrap();
+
+            xor(block, &tweak);
+            self.cipher_1.encrypt_block(block);
+            xor(block, &tweak);
+        }
+
+        let remainder = sector.len() % 16;
+        if remainder != 0 {
             let last_tweak = galois_field_128_mul_le(tweak);
-            let remainder = sector.len() % 16;
 
             let (full_block, partial_block) = sector[16 * (block_count - 1)..].split_at_mut(16);
-            let full_block = Array::slice_as_mut_array(full_block).unwrap();
-
-            xor(full_block, &next_to_last_tweak);
-            self.cipher_1.encrypt_block(full_block);
-            xor(full_block, &next_to_last_tweak);
-
             let (last_ciphertext, cipher_plaintext) = full_block.split_at(remainder);
 
             let mut last_block = Array([0u8; 16]);
@@ -276,19 +272,12 @@ where
             "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
         );
 
-        let block_count = sector.len() / 16;
-        let need_stealing = sector.len() % 16 != 0;
-
         // Compute tweak
         self.cipher_2.encrypt_block(&mut tweak);
 
-        let nosteal_block_count = if need_stealing {
-            block_count - 1
-        } else {
-            block_count
-        };
+        let block_count = sector.len() / 16;
 
-        for i in (0..sector.len()).step_by(16).take(nosteal_block_count) {
+        for i in (0..sector.len()).step_by(16).take(block_count - 1) {
             let block = Array::slice_as_mut_array(&mut sector[i..i + 16]).unwrap();
 
             xor(block, &tweak);
@@ -298,10 +287,10 @@ where
             tweak = galois_field_128_mul_le(tweak);
         }
 
-        if need_stealing {
+        let remainder = sector.len() % 16;
+        if remainder != 0 {
             let next_to_last_tweak = tweak;
             let last_tweak = galois_field_128_mul_le(tweak);
-            let remainder = sector.len() % 16;
 
             let (full_block, partial_block) = sector[16 * (block_count - 1)..].split_at_mut(16);
             let full_block = Array::slice_as_mut_array(full_block).unwrap();
@@ -322,6 +311,12 @@ where
 
             partial_block.copy_from_slice(last_plaintext);
             full_block.copy_from_slice(&last_block);
+        } else {
+            let block = Array::slice_as_mut_array(&mut sector[16 * (block_count - 1)..]).unwrap();
+
+            xor(block, &tweak);
+            self.cipher_1.decrypt_block(block);
+            xor(block, &tweak);
         }
     }
 
