@@ -136,7 +136,7 @@ xts.decrypt_area(&mut buffer[0x400..0xC00], 0x200, 2, get_nintendo_tweak);
 use core::convert::TryFrom;
 
 pub use cipher::array::{self, Array};
-use cipher::consts::{U8, U16};
+use cipher::consts::U16;
 use cipher::{BlockCipherDecrypt, BlockCipherEncrypt, BlockSizeUser};
 
 /// Xts128 block cipher. Does not implement implement BlockMode due to XTS differences detailed
@@ -370,16 +370,9 @@ fn xor(buf: &mut [u8], key: &[u8]) {
 }
 
 fn galois_field_128_mul_le(tweak_source: Array<u8, U16>) -> Array<u8, U16> {
-    let (tweak_source_low, tweak_source_high) = tweak_source.split::<U8>();
-    let low_bytes = u64::from_le_bytes(tweak_source_low.0);
-    let high_bytes = u64::from_le_bytes(tweak_source_high.0);
-    let new_low_bytes = (low_bytes << 1) ^ if (high_bytes >> 63) != 0 { 0x87 } else { 0x00 };
-    let new_high_bytes = (low_bytes >> 63) | (high_bytes << 1);
-
-    let mut tweak = Array([0; 16]);
-
-    tweak[..8].copy_from_slice(&new_low_bytes.to_le_bytes());
-    tweak[8..].copy_from_slice(&new_high_bytes.to_le_bytes());
-
-    tweak
+    let tweak_source = u128::from_le_bytes(tweak_source.0);
+    // Get the special value 0x87 if the high bit is set
+    let special = ((tweak_source as i128 >> 127) & 0x87) as u128;
+    let tweak = tweak_source << 1 ^ special;
+    Array(tweak.to_le_bytes())
 }
