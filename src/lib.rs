@@ -1,9 +1,31 @@
 #![no_std]
 
 /*!
-[XTS block mode](https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)) implementation in Rust.
+[XTS block mode] implementation in Rust.
 
-Currently this implementation supports only ciphers with 128-bit (16-byte) block size (distinct from key size). Note that AES-256 uses 128-bit blocks, so it works with this crate. If you require other cipher block sizes, please open an issue.
+Currently this implementation supports only ciphers with 128-bit (16-byte)
+block size (distinct from key size). Note that AES-256 uses 128-bit blocks,
+so it is supported by this crate. If you require other block sizes, feel free
+to open an issue, but notice that only XTS-AES has been standardized and the
+AES standard supports only 128-bit blocks.
+
+[XTS block mode]: https://en.wikipedia.org/wiki/Disk_encryption_theory#XEX-based_tweaked-codebook_mode_with_ciphertext_stealing_(XTS)
+
+# Security warnings
+
+This crate has never been independently audited, use at your own risk.
+
+All of the usual caveats of XTS apply to this crate, and its only intended
+usage is disk (sector-based storage) encryption. Some of these caveats:
+
+- It has no authentication tags, so an adversary with write access may be able
+  to randomize blocks.
+- An adversary with read-write access may be able to reset blocks to a previous
+  value they have seen.
+- It's deterministic, so passive observers may be able to infer when each block
+  has changed.
+
+I recommend reading more about XTS weaknesses before using it.
 
 # Examples:
 
