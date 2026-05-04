@@ -176,7 +176,7 @@ where
     pub fn encrypt_sector(&self, sector: &mut [u8], mut tweak: Array<u8, U16>) {
         assert!(
             sector.len() >= 16,
-            "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
+            "AES-XTS needs at least one complete block in each sector"
         );
 
         // Compute tweak
@@ -269,7 +269,7 @@ where
     pub fn decrypt_sector(&self, sector: &mut [u8], mut tweak: Array<u8, U16>) {
         assert!(
             sector.len() >= 16,
-            "AES-XTS needs at least two blocks to perform stealing, or a single complete block"
+            "AES-XTS needs at least one complete block in each sector"
         );
 
         // Compute tweak
