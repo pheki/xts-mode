@@ -22,7 +22,7 @@ benchmarks = ["dep:criterion"]
 cipher = "0.5.1"
 # Actually dev-dependencies enabled only for openssl tests and benchmarks,
 # but dev-dependencies can't be optional.
-openssl = { version = "0.10.78", optional = true }
+openssl = { version = "0.10.80", optional = true }
 criterion = {version = "0.8.2", optional = true }
 
 [dev-dependencies]
